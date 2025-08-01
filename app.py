@@ -1,19 +1,40 @@
-from flask import Flask, render_template, request, redirect, url_for
+from flask import Flask, render_template, request, redirect
+import json
+import os
 
 app = Flask(__name__)
 
-ratings = []
+# JSON faylni yo'li
+DATA_FILE = 'data/ratings.json'
 
-@app.route("/", methods=["GET", "POST"])
-def home():
-    if request.method == "POST":
-        show_name = request.form["show"]
-        rating = float(request.form["rating"])
-        ratings.append((show_name, rating))
-        return redirect(url_for("home"))
-    
-    average = round(sum(r[1] for r in ratings) / len(ratings), 2) if ratings else None
-    return render_template("index.html", ratings=ratings, average=average)
+# JSON fayl mavjud bo'lmasa, bo'sh holatda yaratamiz
+if not os.path.exists(DATA_FILE):
+    with open(DATA_FILE, 'w') as f:
+        json.dump({}, f)
 
-if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000, debug=True)
+@app.route('/', methods=['GET', 'POST'])
+def index():
+    if request.method == 'POST':
+        show = request.form['show']
+        rating = int(request.form['rating'])
+
+        with open(DATA_FILE, 'r') as f:
+            data = json.load(f)
+
+        if show not in data:
+            data[show] = []
+
+        data[show].append(rating)
+
+        with open(DATA_FILE, 'w') as f:
+            json.dump(data, f)
+
+        return redirect('/')
+
+    shows = [
+        'RAW - 4 September',
+        'SmackDown - 6 September',
+        'SummerSlam 2025',
+        'WrestleMania 41'
+    ]
+    return render_template('index.html', shows=shows)

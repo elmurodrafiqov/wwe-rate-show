@@ -4,21 +4,25 @@
     <title>WWE Show Rating</title>
 </head>
 <body>
-    <h1>WWE Show Rating</h1>
+    <h2>Rate WWE Show</h2>
     <form method="POST">
-        <input type="text" name="show" placeholder="Show nomi" required>
-        <input type="number" name="rating" step="0.1" min="0" max="10" placeholder="Reyting (0-10)" required>
-        <button type="submit">Yuborish</button>
-    </form>
-
-    {% if ratings %}
-        <h2>Barcha reytinglar:</h2>
-        <ul>
-            {% for show, rating in ratings %}
-                <li>{{ show }} — {{ rating }}</li>
+        <label>Select show:</label>
+        <select name="show">
+            {% for show in shows %}
+                <option value="{{ show }}">{{ show }}</option>
             {% endfor %}
-        </ul>
-        <h3>O'rtacha reyting: {{ average }}</h3>
-    {% endif %}
+        </select>
+        <br><br>
+
+        <label>Rate (1-10):</label>
+        <select name="rating">
+            {% for i in range(1, 11) %}
+                <option value="{{ i }}">{{ i }}</option>
+            {% endfor %}
+        </select>
+        <br><br>
+
+        <button type="submit">Submit</button>
+    </form>
 </body>
 </html>
