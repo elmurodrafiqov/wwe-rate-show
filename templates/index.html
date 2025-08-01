@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>WWE Show Rating</title>
+</head>
+<body>
+    <h1>WWE Show Rating</h1>
+    <form method="POST">
+        <input type="text" name="show" placeholder="Show nomi" required>
+        <input type="number" name="rating" step="0.1" min="0" max="10" placeholder="Reyting (0-10)" required>
+        <button type="submit">Yuborish</button>
+    </form>
+
+    {% if ratings %}
+        <h2>Barcha reytinglar:</h2>
+        <ul>
+            {% for show, rating in ratings %}
+                <li>{{ show }} — {{ rating }}</li>
+            {% endfor %}
+        </ul>
+        <h3>O'rtacha reyting: {{ average }}</h3>
+    {% endif %}
+</body>
+</html>
