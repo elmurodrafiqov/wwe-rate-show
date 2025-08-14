@@ -1,115 +1,106 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <meta charset="utf-8">
+    <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin Panel</title>
     <style>
         body {
             font-family: Arial, sans-serif;
-            padding: 15px;
-            max-width: 600px;
-            margin: auto;
-            font-size: 16px;
-            background-color: #f8f9fa;
-        }
-        h1 {
-            font-size: 1.6em;
+            margin: 20px;
+            background: #f4f4f4;
             color: #333;
         }
-        h2 {
-            font-size: 1.4em;
-            margin-top: 20px;
-            color: #555;
+        .container {
+            max-width: 600px;
+            margin: auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0px 0px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            text-align: center;
+            color: #222;
         }
         label {
-            font-weight: bold;
+            display: block;
             margin-top: 10px;
-            display: block;
+            font-weight: bold;
         }
-        input, select, button {
-            display: block;
+        input, button {
             width: 100%;
-            margin-top: 5px;
-            margin-bottom: 10px;
             padding: 10px;
-            font-size: 1em;
-            box-sizing: border-box;
+            margin-top: 5px;
+            margin-bottom: 15px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            font-size: 16px;
         }
         button {
-            background-color: #007BFF;
+            background: #007BFF;
             color: white;
             border: none;
-            border-radius: 5px;
             cursor: pointer;
         }
         button:hover {
-            background-color: #0056b3;
-        }
-        .logout {
-            display: inline-block;
-            margin-bottom: 15px;
-            color: #dc3545;
-            text-decoration: none;
+            background: #0056b3;
         }
         .stats {
-            background-color: white;
-            padding: 15px;
+            background: #fafafa;
+            padding: 10px;
             border-radius: 5px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
         }
         ul {
             padding-left: 20px;
         }
-        li {
-            margin-bottom: 5px;
+        .logout {
+            text-align: right;
+        }
+        .logout a {
+            text-decoration: none;
+            color: red;
+            font-weight: bold;
         }
     </style>
 </head>
 <body>
+    <div class="container">
+        <div class="logout">
+            <a href="{{ url_for('logout') }}">Logout</a>
+        </div>
+        <h1>Admin Panel</h1>
 
-    <h1>Admin Panel</h1>
-    <a href="{{ url_for('logout') }}" class="logout">Logout</a>
-
-    <div>
         <h2>Current Show</h2>
-        <form method="post" action="{{ url_for('admin_panel') }}">
-            <label>Show name:</label>
-            <select name="show_name">
-                <option value="RAW" {% if data.get('show_name') == 'RAW' %}selected{% endif %}>RAW</option>
-                <option value="Smackdown" {% if data.get('show_name') == 'Smackdown' %}selected{% endif %}>Smackdown</option>
-                <option value="Summerslam" {% if data.get('show_name') == 'Summerslam' %}selected{% endif %}>Summerslam</option>
-            </select>
+        <form method="POST" action="{{ url_for('admin_panel') }}">
+            <label for="show_name">Show name:</label>
+            <input type="text" id="show_name" name="show_name" value="{{ data.get('show_name', '') }}" required>
 
-            <label>Date:</label>
-            <input type="date" name="date" value="{{ data.get('date') }}">
+            <label for="show_date">Date:</label>
+            <input type="date" id="show_date" name="show_date" value="{{ data.get('show_date', '') }}" required>
 
             <button type="submit" name="action" value="update_show">Save</button>
         </form>
-    </div>
 
-    <div>
         <h2>Voting</h2>
-        <form method="post" action="{{ url_for('admin_panel') }}">
+        <form method="POST" action="{{ url_for('admin_panel') }}">
             <button type="submit" name="action" value="toggle_voting">
-                {% if data.get('voting_open', True) %}Close Voting{% else %}Open Voting{% endif %}
+                {% if data.get('voting_open', True) %} Close Voting {% else %} Open Voting {% endif %}
             </button>
             <button type="submit" name="action" value="clear_ratings">Clear Ratings</button>
         </form>
-    </div>
 
-    <div class="stats">
         <h2>Stats</h2>
-        <p>Average: {{ avg_rating }}</p>
-        <p>Total votes: {{ ratings|length }}</p>
-
-        <h3>Who rated what</h3>
-        <ul>
-            {% for r in ratings %}
-                <li>{{ r['name'] }} — {{ r['score'] }} ({{ r['time'] }})</li>
-            {% endfor %}
-        </ul>
+        <div class="stats">
+            <p><strong>Average:</strong> {{ avg_rating }}</p>
+            <p><strong>Total votes:</strong> {{ ratings|length }}</p>
+            <p><strong>Who rated what:</strong></p>
+            <ul>
+                {% for r in ratings %}
+                    <li>{{ r['name'] }} — {{ r['score'] }} ({{ r['time'] }})</li>
+                {% endfor %}
+            </ul>
+        </div>
     </div>
-
 </body>
 </html>
