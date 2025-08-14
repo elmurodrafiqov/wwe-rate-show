@@ -1,49 +1,115 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <meta charset="utf-8">
-  <title>Admin Panel</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Panel</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 15px;
+            max-width: 600px;
+            margin: auto;
+            font-size: 16px;
+            background-color: #f8f9fa;
+        }
+        h1 {
+            font-size: 1.6em;
+            color: #333;
+        }
+        h2 {
+            font-size: 1.4em;
+            margin-top: 20px;
+            color: #555;
+        }
+        label {
+            font-weight: bold;
+            margin-top: 10px;
+            display: block;
+        }
+        input, select, button {
+            display: block;
+            width: 100%;
+            margin-top: 5px;
+            margin-bottom: 10px;
+            padding: 10px;
+            font-size: 1em;
+            box-sizing: border-box;
+        }
+        button {
+            background-color: #007BFF;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        .logout {
+            display: inline-block;
+            margin-bottom: 15px;
+            color: #dc3545;
+            text-decoration: none;
+        }
+        .stats {
+            background-color: white;
+            padding: 15px;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        ul {
+            padding-left: 20px;
+        }
+        li {
+            margin-bottom: 5px;
+        }
+    </style>
 </head>
 <body>
-  <h1>Admin Panel</h1>
-  <p><a href="{{ url_for('logout') }}">Logout</a></p>
 
-  <h2>Current Show</h2>
-  <form method="POST">
-    <input type="hidden" name="action" value="update_show">
+    <h1>Admin Panel</h1>
+    <a href="{{ url_for('logout') }}" class="logout">Logout</a>
+
     <div>
-      <label>Show name:</label>
-      <input type="text" name="show_name" value="{{ data.show_name }}" required>
+        <h2>Current Show</h2>
+        <form method="post" action="{{ url_for('admin_panel') }}">
+            <label>Show name:</label>
+            <select name="show_name">
+                <option value="RAW" {% if data.get('show_name') == 'RAW' %}selected{% endif %}>RAW</option>
+                <option value="Smackdown" {% if data.get('show_name') == 'Smackdown' %}selected{% endif %}>Smackdown</option>
+                <option value="Summerslam" {% if data.get('show_name') == 'Summerslam' %}selected{% endif %}>Summerslam</option>
+            </select>
+
+            <label>Date:</label>
+            <input type="date" name="date" value="{{ data.get('date') }}">
+
+            <button type="submit" name="action" value="update_show">Save</button>
+        </form>
     </div>
+
     <div>
-      <label>Date:</label>
-      <input type="date" name="show_date" value="{{ data.show_date }}" required>
+        <h2>Voting</h2>
+        <form method="post" action="{{ url_for('admin_panel') }}">
+            <button type="submit" name="action" value="toggle_voting">
+                {% if data.get('voting_open', True) %}Close Voting{% else %}Open Voting{% endif %}
+            </button>
+            <button type="submit" name="action" value="clear_ratings">Clear Ratings</button>
+        </form>
     </div>
-    <button type="submit">Save</button>
-  </form>
 
-  <h2>Voting</h2>
-  <form method="POST" style="display:inline-block">
-    <input type="hidden" name="action" value="toggle_voting">
-    <button type="submit">
-      {% if data.voting_open %}Close Voting{% else %}Open Voting{% endif %}
-    </button>
-  </form>
+    <div class="stats">
+        <h2>Stats</h2>
+        <p>Average: {{ avg_rating }}</p>
+        <p>Total votes: {{ ratings|length }}</p>
 
-  <form method="POST" style="display:inline-block; margin-left:12px">
-    <input type="hidden" name="action" value="clear_ratings">
-    <button type="submit" onclick="return confirm('Clear all ratings?')">Clear Ratings</button>
-  </form>
+        <h3>Who rated what</h3>
+        <ul>
+            {% for r in ratings %}
+                <li>{{ r['name'] }} — {{ r['score'] }} ({{ r['time'] }})</li>
+            {% endfor %}
+        </ul>
+    </div>
 
-  <h2>Stats</h2>
-  <p>Average: {{ avg_rating }}</p>
-  <p>Total votes: {{ ratings|length }}</p>
-
-  <h3>Who rated what</h3>
-  <ul>
-    {% for r in ratings %}
-      <li>{{ r.user }} — {{ r.score }} ({{ r.time }})</li>
-    {% endfor %}
-  </ul>
 </body>
 </html>
