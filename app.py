@@ -1,145 +1,96 @@
 from flask import Flask, render_template, request, redirect, url_for, session, abort
 import json
 import os
-from datetime import datetime
 
-# ===== Config =====
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-DATA_DIR = os.path.join(BASE_DIR, "data")
-DATA_FILE = os.path.join(DATA_DIR, "ratings.json")
+app = Flask(__name__)
+app.secret_key = "supersecretkey"
 
+# Admin login ma'lumotlari
 ADMIN_USERNAME = "elmur"
 ADMIN_PASSWORD = "elmurodmacho"
 
-app = Flask(__name__)
-app.secret_key = os.environ.get("SECRET_KEY", "change-this-dev-secret-key")
+DATA_FILE = "data.json"
 
-# ===== Storage helpers =====
-def ensure_storage():
-    os.makedirs(DATA_DIR, exist_ok=True)
-    if not os.path.exists(DATA_FILE):
-        initial = {
-            "show_name": "SmackDown",
-            "show_date": datetime.now().strftime("%Y-%m-%d"),
-            "voting_open": True,
-            "ratings": []  # [{user, score, time}]
-        }
-        with open(DATA_FILE, "w", encoding="utf-8") as f:
-            json.dump(initial, f, indent=4, ensure_ascii=False)
-
+# JSON faylni yuklash
 def load_data():
-    ensure_storage()
-    with open(DATA_FILE, "r", encoding="utf-8") as f:
+    if not os.path.exists(DATA_FILE):
+        return {"shows": [], "ratings": []}
+    with open(DATA_FILE, "r") as f:
         return json.load(f)
 
+# JSON faylga saqlash
 def save_data(data):
-    with open(DATA_FILE, "w", encoding="utf-8") as f:
-        json.dump(data, f, indent=4, ensure_ascii=False)
+    with open(DATA_FILE, "w") as f:
+        json.dump(data, f, indent=4)
 
-# ===== Public routes =====
+# Bosh sahifa - Reyting berish
 @app.route("/", methods=["GET", "POST"])
 def index():
     data = load_data()
-
     if request.method == "POST":
-        if not data.get("voting_open", False):
-            return "Voting is closed!", 403
-
-        username = (request.form.get("username") or "").strip()
-        raw_score = (request.form.get("rating") or "").strip()
-
-        if not username:
-            return "Please enter your name!", 400
-
+        show_name = request.form.get("show_name", "").strip()
+        rating = request.form.get("rating", "").strip()
+        
+        if not show_name or not rating:
+            abort(400, "Show name va rating to‘ldirilishi kerak")
+        
         try:
-            score = float(raw_score)
-        except Exception:
-            return "Invalid rating!", 400
+            rating = int(rating)
+            if rating < 1 or rating > 10:
+                abort(400, "Rating 1-10 orasida bo‘lishi kerak")
+        except ValueError:
+            abort(400, "Rating butun son bo‘lishi kerak")
 
-        if score < 0 or score > 10:
-            return "Rating must be between 0 and 10!", 400
-
-        data["ratings"].append({
-            "user": username,
-            "score": round(score, 2),
-            "time": datetime.utcnow().isoformat() + "Z"
-        })
+        data["ratings"].append({"show": show_name, "rating": rating})
         save_data(data)
-        return redirect(url_for("thank_you"))
+        return redirect(url_for("index"))
 
-    return render_template(
-        "index.html",
-        show_name=data.get("show_name", ""),
-        show_date=data.get("show_date", ""),
-        voting_open=data.get("voting_open", False)
-    )
+    return render_template("index.html", shows=data["shows"], ratings=data["ratings"])
 
-@app.route("/thank_you")
-def thank_you():
-    return "Thank you for voting!"
-
-# ===== Auth helpers =====
-def require_admin():
-    return bool(session.get("admin", False))
-
-# ===== Auth routes =====
+# Admin login sahifasi
 @app.route("/login", methods=["GET", "POST"])
 def login():
     if request.method == "POST":
-        u = request.form.get("username", "")
-        p = request.form.get("password", "")
-        if u == ADMIN_USERNAME and p == ADMIN_PASSWORD:
+        username = request.form.get("username", "")
+        password = request.form.get("password", "")
+        if username == ADMIN_USERNAME and password == ADMIN_PASSWORD:
             session["admin"] = True
             return redirect(url_for("admin_panel"))
         else:
-            return "Invalid credentials!", 403
+            return render_template("login.html", error="Noto‘g‘ri login yoki parol")
     return render_template("login.html")
 
-@app.route("/logout")
-def logout():
-    session.pop("admin", None)
-    return redirect(url_for("login"))
-
-# ===== Admin panel =====
+# Admin panel
 @app.route("/admin", methods=["GET", "POST"])
 def admin_panel():
-    if not require_admin():
+    if not session.get("admin"):
         return redirect(url_for("login"))
-
+    
     data = load_data()
 
     if request.method == "POST":
-        action = request.form.get("action", "").strip()
+        action = request.form.get("action", "")
+        
+        if action == "add_show":
+            show_name = request.form.get("show_name", "").strip()
+            if show_name and show_name not in data["shows"]:
+                data["shows"].append(show_name)
+                save_data(data)
+        
+        elif action == "delete_show":
+            show_name = request.form.get("show_name", "").strip()
+            if show_name in data["shows"]:
+                data["shows"].remove(show_name)
+                data["ratings"] = [r for r in data["ratings"] if r["show"] != show_name]
+                save_data(data)
 
-        if action == "update_show":
-            data["show_name"] = request.form.get("show_name", data["show_name"]).strip()
-            data["show_date"] = request.form.get("show_date", data["show_date"]).strip()
-            save_data(data)
-            return redirect(url_for("admin_panel"))
+    return render_template("admin.html", shows=data["shows"], ratings=data["ratings"])
 
-        elif action == "toggle_voting":
-            data["voting_open"] = not data.get("voting_open", True)
-            save_data(data)
-            return redirect(url_for("admin_panel"))
+# Logout
+@app.route("/logout")
+def logout():
+    session.pop("admin", None)
+    return redirect(url_for("index"))
 
-        elif action == "clear_ratings":
-            data["ratings"] = []
-            save_data(data)
-            return redirect(url_for("admin_panel"))
-
-        else:
-            abort(400, "Unknown action")
-
-    ratings = data.get("ratings", [])
-    avg = round(sum(r["score"] for r in ratings) / len(ratings), 2) if ratings else 0.0
-
-    return render_template("admin.html", data=data, avg_rating=avg, ratings=ratings)
-
-# Favicon 404 bo'lib logni bulg‘amasin
-@app.route("/favicon.ico")
-def favicon():
-    return ("", 204)
-
-# Lokal ishga tushirish
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000, debug=True)
+    app.run(debug=True)
