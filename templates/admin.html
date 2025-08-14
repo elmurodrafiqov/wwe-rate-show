@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Admin Panel</title>
+</head>
+<body>
+    <h1>Admin Panel</h1>
+    <a href="{{ url_for('logout') }}">Logout</a>
+
+    <h2>Current Show</h2>
+    <form method="POST">
+        <input type="text" name="show_name" value="{{ data.show_name }}" required>
+        <input type="date" name="show_date" value="{{ data.show_date }}" required>
+        <button type="submit" name="update_show">Update Show</button>
+    </form>
+
+    <h2>Voting Control</h2>
+    <form method="POST">
+        <button type="submit" name="toggle_voting">
+            {% if data.voting_open %} Close Voting {% else %} Open Voting {% endif %}
+        </button>
+    </form>
+
+    <h2>Ratings Info</h2>
+    <p>Average Rating: {{ avg_rating }}</p>
+    <p>Total Votes: {{ data.ratings|length }}</p>
+
+    <ul>
+    {% for r in data.ratings %}
+        <li>{{ r }}</li>
+    {% endfor %}
+    </ul>
+</body>
+</html>
