@@ -1,96 +1,104 @@
 from flask import Flask, render_template, request, redirect, url_for, session, abort
 import json
 import os
+from datetime import datetime
 
-app = Flask(__name__)
+app = Flask(name)
 app.secret_key = "supersecretkey"
 
-# Admin login ma'lumotlari
+DATA_FILE = "data/ratings.json"
+
+# Fayl mavjud bo‘lmasa — yaratamiz
+os.makedirs("data", exist_ok=True)
+if not os.path.exists(DATA_FILE):
+    with open(DATA_FILE, "w") as f:
+        json.dump({"show_name": "", "show_date": "", "ratings": []}, f)
+
 ADMIN_USERNAME = "elmur"
 ADMIN_PASSWORD = "elmurodmacho"
 
-DATA_FILE = "data.json"
-
-# JSON faylni yuklash
+# Ma’lumotni o‘qish
 def load_data():
-    if not os.path.exists(DATA_FILE):
-        return {"shows": [], "ratings": []}
     with open(DATA_FILE, "r") as f:
         return json.load(f)
 
-# JSON faylga saqlash
+# Ma’lumotni yozish
 def save_data(data):
     with open(DATA_FILE, "w") as f:
         json.dump(data, f, indent=4)
 
-# Bosh sahifa - Reyting berish
-@app.route("/", methods=["GET", "POST"])
+# Asosiy sahifa
+@app.route("/")
 def index():
     data = load_data()
-    if request.method == "POST":
-        show_name = request.form.get("show_name", "").strip()
-        rating = request.form.get("rating", "").strip()
-        
-        if not show_name or not rating:
-            abort(400, "Show name va rating to‘ldirilishi kerak")
-        
-        try:
-            rating = int(rating)
-            if rating < 1 or rating > 10:
-                abort(400, "Rating 1-10 orasida bo‘lishi kerak")
-        except ValueError:
-            abort(400, "Rating butun son bo‘lishi kerak")
+    return render_template("index.html", data=data)
 
-        data["ratings"].append({"show": show_name, "rating": rating})
-        save_data(data)
-        return redirect(url_for("index"))
+# Ball qo‘shish
+@app.route("/rate", methods=["POST"])
+def rate():
+    data = load_data()
 
-    return render_template("index.html", shows=data["shows"], ratings=data["ratings"])
+    rating = request.form.get("rating")
+    if rating is None or rating.strip() == "":
+        return "Rating kiritilmadi!", 400
 
-# Admin login sahifasi
+    try:
+        rating = float(rating)
+    except ValueError:
+        return "Rating faqat raqam bo‘lishi kerak!", 400
+
+    if rating < 0 or rating > 10:
+        return "Rating 0 va 10 oralig‘ida bo‘lishi kerak!", 400
+
+    data["ratings"].append({
+        "value": rating,
+        "time": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    })
+    save_data(data)
+
+    return redirect(url_for("index"))
+
+# Login sahifa
 @app.route("/login", methods=["GET", "POST"])
 def login():
     if request.method == "POST":
-        username = request.form.get("username", "")
-        password = request.form.get("password", "")
+        username = request.form.get("username")
+        password = request.form.get("password")
         if username == ADMIN_USERNAME and password == ADMIN_PASSWORD:
             session["admin"] = True
-            return redirect(url_for("admin_panel"))
+            return redirect(url_for("admin"))
         else:
-            return render_template("login.html", error="Noto‘g‘ri login yoki parol")
+            return "Login yoki parol noto‘g‘ri!"
     return render_template("login.html")
 
 # Admin panel
 @app.route("/admin", methods=["GET", "POST"])
-def admin_panel():
+def admin():
     if not session.get("admin"):
         return redirect(url_for("login"))
-    
+
     data = load_data()
 
     if request.method == "POST":
-        action = request.form.get("action", "")
-        
-        if action == "add_show":
-            show_name = request.form.get("show_name", "").strip()
-            if show_name and show_name not in data["shows"]:
-                data["shows"].append(show_name)
-                save_data(data)
-        
-        elif action == "delete_show":
-            show_name = request.form.get("show_name", "").strip()
-            if show_name in data["shows"]:
-                data["shows"].remove(show_name)
-                data["ratings"] = [r for r in data["ratings"] if r["show"] != show_name]
-                save_data(data)
+        show_name = request.form.get("show_name")
+        show_date = request.form.get("show_date")
 
-    return render_template("admin.html", shows=data["shows"], ratings=data["ratings"])
+        if show_name:
+            data["show_name"] = show_name
+        if show_date:
+            data["show_date"] = show_date
+
+        save_data(data)
+        return redirect(url_for("admin"))
+
+    avg_rating = round(sum(r["value"] for r in data["ratings"]) / len(data["ratings"]), 2) if data["ratings"] else 0
+    return render_template("admin.html", data=data, avg_rating=avg_rating)
 
 # Logout
 @app.route("/logout")
 def logout():
-    session.pop("admin", None)
+    session.clear()
     return redirect(url_for("index"))
 
-if __name__ == "__main__":
+if name == "main":
     app.run(debug=True)
