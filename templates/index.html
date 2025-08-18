@@ -5,15 +5,9 @@
       <img src="{{ settings.header_image }}" alt="Header" class="w-full rounded-2xl shadow-lg border border-slate-800" />
     {% endif %}
 
-    <div class="flex items-center justify-between gap-4">
-      <div>
-        <h1 class="text-2xl font-bold">{{ settings.show_name }}</h1>
-        <p class="text-slate-400">Sana: {{ settings.show_date }}</p>
-      </div>
-      <div class="text-right">
-        <p class="text-sm text-slate-400">Jami ovozlar: {{ stats.count }}</p>
-        <p class="text-xl font-semibold">O'rtacha: {{ '%.2f'|format(stats.avg) }}</p>
-      </div>
+    <div>
+      <h1 class="text-2xl font-bold">{{ settings.show_name }}</h1>
+      <p class="text-slate-400">Sana: {{ settings.show_date }}</p>
     </div>
 
     {% if voting_open %}
