@@ -1,6 +1,14 @@
 {
-    "show_name": "RAW",
-    "show_date": "2025-08-14",
-    "is_open": true,
-    "ratings": []
+  "shows": {
+    "WWE Raw::2025-08-18": {
+      "ratings": [
+        {
+          "user_id": "a20571375a8330f624324fd4e13e6f9b56112c1b3f122727d260ae132e7f0c30",
+          "name": "elm",
+          "value": 10.0,
+          "timestamp": "2025-08-18T13:01:33Z"
+        }
+      ]
+    }
+  }
 }

@@ -1,102 +1,43 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Rate WWE Show</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 0;
-            padding: 0;
-            background: #f4f4f4;
-            color: #333;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-        }
-        .container {
-            background: white;
-            padding: 20px;
-            max-width: 500px;
-            width: 90%;
-            border-radius: 10px;
-            box-shadow: 0px 0px 15px rgba(0,0,0,0.1);
-            text-align: center;
-        }
-        h1 {
-            color: #222;
-            font-size: 28px;
-            margin-bottom: 5px;
-        }
-        p.date {
-            color: #777;
-            margin-bottom: 20px;
-            font-size: 16px;
-        }
-        input, button {
-            width: 100%;
-            padding: 12px;
-            margin: 10px 0;
-            border-radius: 5px;
-            border: 1px solid #ccc;
-            font-size: 16px;
-        }
-        input[type="number"] {
-            -moz-appearance: textfield;
-        }
-        input::-webkit-outer-spin-button,
-        input::-webkit-inner-spin-button {
-            -webkit-appearance: none;
-            margin: 0;
-        }
-        button {
-            background: #28a745;
-            color: white;
-            border: none;
-            font-weight: bold;
-            cursor: pointer;
-        }
-        button:hover {
-            background: #218838;
-        }
-        .closed {
-            padding: 15px;
-            background: #ffcccc;
-            color: #a00;
-            font-weight: bold;
-            border-radius: 5px;
-        }
-        .stats {
-            margin-top: 20px;
-            background: #fafafa;
-            padding: 10px;
-            border-radius: 5px;
-        }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <h1>{{ data.get('show_name', 'No Show') }}</h1>
-        <p class="date">{{ data.get('show_date', '') }}</p>
+{% extends 'base.html' %}
+{% block content %}
+  <div class="space-y-6">
+    {% if settings.header_image %}
+      <img src="{{ settings.header_image }}" alt="Header" class="w-full rounded-2xl shadow-lg border border-slate-800" />
+    {% endif %}
 
-        {% if data.get('voting_open', True) %}
-        <form method="POST" action="{{ url_for('rate') }}">
-            <input type="text" name="name" placeholder="Your name" required>
-            <input type="number" name="score" min="0" max="10" step="0.1" placeholder="Score (0-10)" required>
-            <button type="submit">Submit Rating</button>
-        </form>
-        {% else %}
-        <div class="closed">
-            Voting is currently closed.
-        </div>
-        {% endif %}
-
-        <div class="stats">
-            <p><strong>Average Rating:</strong> {{ avg_rating }}</p>
-            <p><strong>Total Votes:</strong> {{ ratings|length }}</p>
-        </div>
+    <div class="flex items-center justify-between gap-4">
+      <div>
+        <h1 class="text-2xl font-bold">{{ settings.show_name }}</h1>
+        <p class="text-slate-400">Sana: {{ settings.show_date }}</p>
+      </div>
+      <div class="text-right">
+        <p class="text-sm text-slate-400">Jami ovozlar: {{ stats.count }}</p>
+        <p class="text-xl font-semibold">O'rtacha: {{ '%.2f'|format(stats.avg) }}</p>
+      </div>
     </div>
-</body>
-</html>
+
+    {% if voting_open %}
+      {% if user_voted %}
+        <div class="p-4 rounded-xl border border-green-400 bg-green-900/20">
+          Siz allaqachon ovoz bergansiz. Rahmat!
+        </div>
+      {% else %}
+        <form action="{{ url_for('rate') }}" method="post" class="space-y-4 bg-slate-900/40 p-4 rounded-2xl border border-slate-800">
+          <div>
+            <label class="block text-sm mb-1">Ism (ixtiyoriy)</label>
+            <input name="name" maxlength="40" class="w-full rounded-xl bg-slate-900 border border-slate-700 px-3 py-2" placeholder="Masalan: Elmurod" />
+          </div>
+          <div>
+            <label class="block text-sm mb-1">Baho ({{ settings.min_rating }}–{{ settings.max_rating }})</label>
+            <input name="rating" type="number" step="0.1" min="{{ settings.min_rating }}" max="{{ settings.max_rating }}" required class="w-full rounded-xl bg-slate-900 border border-slate-700 px-3 py-2" placeholder="Masalan: 7.1" />
+          </div>
+          <button class="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700">Ovoz berish</button>
+        </form>
+      {% endif %}
+    {% else %}
+      <div class="p-4 rounded-xl border border-yellow-400 bg-yellow-900/20">
+        Ovoz berish hozircha yopilgan.
+      </div>
+    {% endif %}
+  </div>
+{% endblock %}

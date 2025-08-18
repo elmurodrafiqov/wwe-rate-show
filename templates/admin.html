@@ -1,106 +1,99 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Panel</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 20px;
-            background: #f4f4f4;
-            color: #333;
-        }
-        .container {
-            max-width: 600px;
-            margin: auto;
-            background: white;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0px 0px 10px rgba(0,0,0,0.1);
-        }
-        h1 {
-            text-align: center;
-            color: #222;
-        }
-        label {
-            display: block;
-            margin-top: 10px;
-            font-weight: bold;
-        }
-        input, button {
-            width: 100%;
-            padding: 10px;
-            margin-top: 5px;
-            margin-bottom: 15px;
-            border: 1px solid #ccc;
-            border-radius: 5px;
-            font-size: 16px;
-        }
-        button {
-            background: #007BFF;
-            color: white;
-            border: none;
-            cursor: pointer;
-        }
-        button:hover {
-            background: #0056b3;
-        }
-        .stats {
-            background: #fafafa;
-            padding: 10px;
-            border-radius: 5px;
-        }
-        ul {
-            padding-left: 20px;
-        }
-        .logout {
-            text-align: right;
-        }
-        .logout a {
-            text-decoration: none;
-            color: red;
-            font-weight: bold;
-        }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <div class="logout">
-            <a href="{{ url_for('logout') }}">Logout</a>
-        </div>
-        <h1>Admin Panel</h1>
-
-        <h2>Current Show</h2>
-        <form method="POST" action="{{ url_for('admin_panel') }}">
-            <label for="show_name">Show name:</label>
-            <input type="text" id="show_name" name="show_name" value="{{ data.get('show_name', '') }}" required>
-
-            <label for="show_date">Date:</label>
-            <input type="date" id="show_date" name="show_date" value="{{ data.get('show_date', '') }}" required>
-
-            <button type="submit" name="action" value="update_show">Save</button>
-        </form>
-
-        <h2>Voting</h2>
-        <form method="POST" action="{{ url_for('admin_panel') }}">
-            <button type="submit" name="action" value="toggle_voting">
-                {% if data.get('voting_open', True) %} Close Voting {% else %} Open Voting {% endif %}
-            </button>
-            <button type="submit" name="action" value="clear_ratings">Clear Ratings</button>
-        </form>
-
-        <h2>Stats</h2>
-        <div class="stats">
-            <p><strong>Average:</strong> {{ avg_rating }}</p>
-            <p><strong>Total votes:</strong> {{ ratings|length }}</p>
-            <p><strong>Who rated what:</strong></p>
-            <ul>
-                {% for r in ratings %}
-                    <li>{{ r['name'] }} — {{ r['score'] }} ({{ r['time'] }})</li>
-                {% endfor %}
-            </ul>
-        </div>
+{% extends 'base.html' %}
+{% block content %}
+  {% if view == 'login' %}
+    <div class="max-w-md mx-auto bg-slate-900/50 p-6 rounded-2xl border border-slate-800">
+      <h2 class="text-xl font-semibold mb-4">Admin kirish</h2>
+      <form method="post">
+        <input type="password" name="password" placeholder="Parol" class="w-full rounded-xl bg-slate-900 border border-slate-700 px-3 py-2 mb-3" required />
+        <button class="w-full px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500">Kirish</button>
+      </form>
     </div>
-</body>
-</html>
+  {% elif view == 'dashboard' %}
+    <div class="space-y-8">
+      <div class="flex items-center justify-between">
+        <h2 class="text-2xl font-bold">Admin panel</h2>
+        <a href="{{ url_for('admin_logout') }}" class="text-sm underline">Chiqish</a>
+      </div>
+
+      <form action="{{ url_for('admin_update_settings') }}" method="post" class="grid md:grid-cols-2 gap-4 bg-slate-900/40 p-4 rounded-2xl border border-slate-800">
+        <div>
+          <label class="block text-sm mb-1">Shou nomi</label>
+          <input name="show_name" value="{{ settings.show_name }}" class="w-full rounded-xl bg-slate-900 border border-slate-700 px-3 py-2" />
+        </div>
+        <div>
+          <label class="block text-sm mb-1">Sana (YYYY-MM-DD)</label>
+          <input name="show_date" value="{{ settings.show_date }}" class="w-full rounded-xl bg-slate-900 border border-slate-700 px-3 py-2" />
+        </div>
+        <div class="md:col-span-2">
+          <label class="block text-sm mb-1">Header rasm (URL)</label>
+          <input name="header_image" value="{{ settings.header_image }}" class="w-full rounded-xl bg-slate-900 border border-slate-700 px-3 py-2" placeholder="https://...jpg" />
+          <p class="text-xs text-slate-400 mt-1">Maslahat: Twitter/X, Imgur yoki WWE promo rasmlarining to'g'ridan-to'g'ri URL manzilini qo'ying.</p>
+        </div>
+        <div>
+          <label class="inline-flex items-center gap-2 text-sm">
+            <input type="checkbox" name="voting_open" {% if settings.voting_open %}checked{% endif %}>
+            Ovoz berish ochiq
+          </label>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-sm mb-1">Min</label>
+            <input name="min_rating" type="number" step="0.1" value="{{ settings.min_rating }}" class="w-full rounded-xl bg-slate-900 border border-slate-700 px-3 py-2" />
+          </div>
+          <div>
+            <label class="block text-sm mb-1">Max</label>
+            <input name="max_rating" type="number" step="0.1" value="{{ settings.max_rating }}" class="w-full rounded-xl bg-slate-900 border border-slate-700 px-3 py-2" />
+          </div>
+        </div>
+        <div class="md:col-span-2">
+          <button class="px-4 py-2 rounded-xl bg-green-600 hover:bg-green-500">Saqlash</button>
+        </div>
+      </form>
+
+      <div class="bg-slate-900/40 p-4 rounded-2xl border border-slate-800">
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="text-lg font-semibold">Joriy shou: <span class="font-mono">{{ show_key }}</span></h3>
+          <div class="space-x-2">
+            <form action="{{ url_for('admin_clear_current') }}" method="post" class="inline">
+              <button class="px-3 py-2 rounded-xl bg-rose-600 hover:bg-rose-500" onclick="return confirm('Rostdan ham tozalansinmi?')">Reytinglarni tozalash</button>
+            </form>
+            <a class="px-3 py-2 rounded-xl bg-sky-700 hover:bg-sky-600" href="{{ url_for('admin_export_csv') }}">CSV eksport</a>
+          </div>
+        </div>
+
+        <div class="grid md:grid-cols-4 gap-3 mb-4">
+          <div class="p-3 rounded-xl border border-slate-700"><div class="text-xs text-slate-400">Jami</div><div class="text-xl font-semibold">{{ stats.count }}</div></div>
+          <div class="p-3 rounded-xl border border-slate-700"><div class="text-xs text-slate-400">O'rtacha</div><div class="text-xl font-semibold">{{ '%.2f'|format(stats.avg) }}</div></div>
+          <div class="p-3 rounded-xl border border-slate-700"><div class="text-xs text-slate-400">Min</div><div class="text-xl font-semibold">{{ stats.min }}</div></div>
+          <div class="p-3 rounded-xl border border-slate-700"><div class="text-xs text-slate-400">Max</div><div class="text-xl font-semibold">{{ stats.max }}</div></div>
+        </div>
+
+        <div class="overflow-x-auto">
+          <table class="min-w-full text-sm">
+            <thead class="text-left text-slate-300">
+              <tr>
+                <th class="py-2 pr-4">#</th>
+                <th class="py-2 pr-4">User</th>
+                <th class="py-2 pr-4">Ism</th>
+                <th class="py-2 pr-4">Baho</th>
+                <th class="py-2 pr-4">Vaqt (UTC)</th>
+              </tr>
+            </thead>
+            <tbody class="text-slate-400">
+              {% for r in ratings %}
+                <tr class="border-t border-slate-800">
+                  <td class="py-2 pr-4">{{ loop.index }}</td>
+                  <td class="py-2 pr-4 font-mono">{{ r.user_mask }}</td>
+                  <td class="py-2 pr-4">{{ r.name or '-' }}</td>
+                  <td class="py-2 pr-4 font-semibold text-slate-100">{{ r.value }}</td>
+                  <td class="py-2 pr-4">{{ r.timestamp }}</td>
+                </tr>
+              {% else %}
+                <tr><td colspan="5" class="py-4 text-center">Hozircha ovozlar yo'q.</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+  {% endif %}
+{% endblock %}

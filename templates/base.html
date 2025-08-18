@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="uz">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>WWE Rate Show</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-950 text-slate-100">
+  <header class="w-full bg-slate-900/60 sticky top-0 z-10 border-b border-slate-800">
+    <div class="max-w-4xl mx-auto px-4 py-3 flex items-center justify-between">
+      <a href="{{ url_for('index') }}" class="font-bold tracking-wide">WWE Rate Show</a>
+      <nav class="space-x-4 text-sm">
+        <a href="{{ url_for('index') }}" class="hover:underline">Bosh sahifa</a>
+        <a href="{{ url_for('admin') }}" class="hover:underline">Admin</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="max-w-4xl mx-auto px-4 py-6">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <div class="space-y-2 mb-4">
+          {% for category, msg in messages %}
+            <div class="p-3 rounded border {{ 'border-green-400 bg-green-900/30' if category=='success' else ('border-yellow-400 bg-yellow-900/30' if category=='warning' else ('border-red-400 bg-red-900/30' if category=='danger' else 'border-slate-400 bg-slate-800/50')) }}">
+              {{ msg }}
+            </div>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+
+    {% block content %}{% endblock %}
+  </main>
+
+  <footer class="text-center text-xs text-slate-400 py-8">
+    © {{ now().year if now else '' }} WWE Rate Show — Elmurod admin
+  </footer>
+</body>
+</html>

@@ -1,0 +1,9 @@
+{
+  "show_name": "WWE Raw",
+  "show_date": "2025-08-18",
+  "header_image": "https://i.imgur.com/1Yc1b8m.jpeg",
+  "voting_open": true,
+  "min_rating": 0.0,
+  "max_rating": 10.0,
+  "allow_decimals": true
+}
