@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, url_for, session, abort
+from flask import Flask, render_template, request, redirect, url_for, session
 import json
 import os
 from datetime import datetime
@@ -14,6 +14,7 @@ if not os.path.exists(DATA_FILE):
     with open(DATA_FILE, "w") as f:
         json.dump({"show_name": "", "show_date": "", "ratings": []}, f)
 
+# Admin login ma’lumotlari
 ADMIN_USERNAME = "elmur"
 ADMIN_PASSWORD = "elmurodmacho"
 
@@ -27,19 +28,19 @@ def save_data(data):
     with open(DATA_FILE, "w") as f:
         json.dump(data, f, indent=4)
 
-# Asosiy sahifa
+# Home sahifa
 @app.route("/")
-def index():
+def home():
     data = load_data()
-    return render_template("index.html", data=data)
+    return render_template("home.html", data=data)
 
-# Ball qo‘shish
+# Reyting berish
 @app.route("/rate", methods=["POST"])
 def rate():
     data = load_data()
 
     rating = request.form.get("rating")
-    if rating is None or rating.strip() == "":
+    if not rating or rating.strip() == "":
         return "Rating kiritilmadi!", 400
 
     try:
@@ -56,7 +57,7 @@ def rate():
     })
     save_data(data)
 
-    return redirect(url_for("index"))
+    return redirect(url_for("home"))
 
 # Login sahifa
 @app.route("/login", methods=["GET", "POST"])
@@ -98,7 +99,7 @@ def admin():
 @app.route("/logout")
 def logout():
     session.clear()
-    return redirect(url_for("index"))
+    return redirect(url_for("home"))
 
 if __name__ == "__main__":
     app.run(debug=True)
