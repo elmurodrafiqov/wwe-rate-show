@@ -3,7 +3,7 @@ import json
 import os
 from datetime import datetime
 
-app = Flask(name)
+app = Flask(__name__)
 app.secret_key = "supersecretkey"
 
 DATA_FILE = "data/ratings.json"
@@ -100,5 +100,5 @@ def logout():
     session.clear()
     return redirect(url_for("index"))
 
-if name == "main":
+if __name__ == "__main__":
     app.run(debug=True)
